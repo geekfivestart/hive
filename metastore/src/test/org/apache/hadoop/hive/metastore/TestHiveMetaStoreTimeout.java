@@ -47,7 +47,7 @@ public class TestHiveMetaStoreTimeout {
         MockPartitionExpressionForMetastore.class.getCanonicalName());
     hiveConf.setTimeVar(HiveConf.ConfVars.METASTORE_CLIENT_SOCKET_TIMEOUT, 10 * 1000,
         TimeUnit.MILLISECONDS);
-    warehouse = new Warehouse(hiveConf);
+    //warehouse = new Warehouse(hiveConf);
     try {
       client = new HiveMetaStoreClient(hiveConf, null);
     } catch (Throwable e) {

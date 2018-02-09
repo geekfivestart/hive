@@ -653,7 +653,8 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         ms.getDatabase(DEFAULT_DATABASE_NAME);
       } catch (NoSuchObjectException e) {
         Database db = new Database(DEFAULT_DATABASE_NAME, DEFAULT_DATABASE_COMMENT,
-          wh.getDefaultDatabasePath(DEFAULT_DATABASE_NAME).toString(), null);
+          "/default/path",null);
+          //wh.getDefaultDatabasePath(DEFAULT_DATABASE_NAME).toString(), null);
         db.setOwnerName(PUBLIC);
         db.setOwnerType(PrincipalType.ROLE);
         ms.createDatabase(db);
@@ -892,11 +893,11 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       if (!validateName(db.getName())) {
         throw new InvalidObjectException(db.getName() + " is not a valid database name");
       }
-      if (null == db.getLocationUri()) {
-        db.setLocationUri(wh.getDefaultDatabasePath(db.getName()).toString());
-      } else {
-        db.setLocationUri(wh.getDnsPath(new Path(db.getLocationUri())).toString());
-      }
+//      if (null == db.getLocationUri()) {
+//        db.setLocationUri(wh.getDefaultDatabasePath(db.getName()).toString());
+//      } else {
+//        db.setLocationUri(wh.getDnsPath(new Path(db.getLocationUri())).toString());
+//      }
       Path dbPath = new Path(db.getLocationUri());
       boolean success = false;
       boolean madeDir = false;
@@ -905,13 +906,13 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
         firePreEvent(new PreCreateDatabaseEvent(db, this));
 
-        if (!wh.isDir(dbPath)) {
-          if (!wh.mkdirs(dbPath, true)) {
-            throw new MetaException("Unable to create database path " + dbPath +
-                ", failed to create database " + db.getName());
-          }
-          madeDir = true;
-        }
+//        if (!wh.isDir(dbPath)) {
+//          if (!wh.mkdirs(dbPath, true)) {
+//            throw new MetaException("Unable to create database path " + dbPath +
+//                ", failed to create database " + db.getName());
+//          }
+//          madeDir = true;
+//        }
 
         ms.openTransaction();
         ms.createDatabase(db);
@@ -919,9 +920,9 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       } finally {
         if (!success) {
           ms.rollbackTransaction();
-          if (madeDir) {
-            wh.deleteDir(dbPath, true);
-          }
+//          if (madeDir) {
+//            wh.deleteDir(dbPath, true);
+//          }
         }
         for (MetaStoreEventListener listener : listeners) {
           listener.onCreateDatabase(new CreateDatabaseEvent(db, success, this));
@@ -1060,13 +1061,13 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           }
         }
         Path path = new Path(db.getLocationUri()).getParent();
-        if (!wh.isWritable(path)) {
-          throw new MetaException("Database not dropped since " +
-              path + " is not writable by " +
-              hiveConf.getUser());
-        }
+//        if (!wh.isWritable(path)) {
+//          throw new MetaException("Database not dropped since " +
+//              path + " is not writable by " +
+//              hiveConf.getUser());
+//        }
 
-        Path databasePath = wh.getDnsPath(wh.getDatabasePath(db));
+        //Path databasePath = wh.getDnsPath(wh.getDatabasePath(db));
 
         // drop any functions before dropping db
         for (String funcName : allFunctions) {
@@ -1094,24 +1095,24 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
               // If the table is not external and it might not be in a subdirectory of the database
               // add it's locations to the list of paths to delete
-              Path tablePath = null;
-              if (table.getSd().getLocation() != null && !isExternal(table)) {
-                tablePath = wh.getDnsPath(new Path(table.getSd().getLocation()));
-                if (!wh.isWritable(tablePath.getParent())) {
-                  throw new MetaException("Database metadata not deleted since table: " +
-                      table.getTableName() + " has a parent location " + tablePath.getParent() +
-                      " which is not writable by " + hiveConf.getUser());
-                }
-
-                if (!isSubdirectory(databasePath, tablePath)) {
-                  tablePaths.add(tablePath);
-                }
-              }
+//              Path tablePath = null;
+//              if (table.getSd().getLocation() != null && !isExternal(table)) {
+//                tablePath = wh.getDnsPath(new Path(table.getSd().getLocation()));
+//                if (!wh.isWritable(tablePath.getParent())) {
+//                  throw new MetaException("Database metadata not deleted since table: " +
+//                      table.getTableName() + " has a parent location " + tablePath.getParent() +
+//                      " which is not writable by " + hiveConf.getUser());
+//                }
+//
+////                if (!isSubdirectory(databasePath, tablePath)) {
+////                  tablePaths.add(tablePath);
+////                }
+//              }
 
               // For each partition in each table, drop the partitions and get a list of
               // partitions' locations which might need to be deleted
-              partitionPaths = dropPartitionsAndGetLocations(ms, name, table.getTableName(),
-                  tablePath, table.getPartitionKeys(), deleteData && !isExternal(table));
+              //partitionPaths = dropPartitionsAndGetLocations(ms, name, table.getTableName(),
+               //   tablePath, table.getPartitionKeys(), deleteData && !isExternal(table));
 
               // Drop the table but not its data
               drop_table(name, table.getTableName(), false);
@@ -1129,18 +1130,18 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           ms.rollbackTransaction();
         } else if (deleteData) {
           // Delete the data in the partitions which have other locations
-          deletePartitionData(partitionPaths);
+          //deletePartitionData(partitionPaths);
           // Delete the data in the tables which have other locations
           for (Path tablePath : tablePaths) {
             deleteTableData(tablePath);
           }
           // Delete the data in the database
-          try {
-            wh.deleteDir(new Path(db.getLocationUri()), true);
-          } catch (Exception e) {
-            LOG.error("Failed to delete database directory: " + db.getLocationUri() +
-                " " + e.getMessage());
-          }
+//          try {
+//            wh.deleteDir(new Path(db.getLocationUri()), true);
+//          } catch (Exception e) {
+//            LOG.error("Failed to delete database directory: " + db.getLocationUri() +
+//                " " + e.getMessage());
+//          }
           // it is not a terrible thing even if the data is not deleted
         }
         for (MetaStoreEventListener listener : listeners) {
@@ -1420,38 +1421,38 @@ public class HiveMetaStore extends ThriftHiveMetastore {
               + " already exists");
         }
 
-        if (!TableType.VIRTUAL_VIEW.toString().equals(tbl.getTableType())) {
-          if (tbl.getSd().getLocation() == null
-              || tbl.getSd().getLocation().isEmpty()) {
-            tblPath = wh.getTablePath(
-                ms.getDatabase(tbl.getDbName()), tbl.getTableName());
-          } else {
-            if (!isExternal(tbl) && !MetaStoreUtils.isNonNativeTable(tbl)) {
-              LOG.warn("Location: " + tbl.getSd().getLocation()
-                  + " specified for non-external table:" + tbl.getTableName());
-            }
-            tblPath = wh.getDnsPath(new Path(tbl.getSd().getLocation()));
-          }
-          tbl.getSd().setLocation(tblPath.toString());
-        }
-
-        if (tblPath != null) {
-          if (!wh.isDir(tblPath)) {
-            if (!wh.mkdirs(tblPath, true)) {
-              throw new MetaException(tblPath
-                  + " is not a directory or unable to create one");
-            }
-            madeDir = true;
-          }
-        }
-        if (HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVESTATSAUTOGATHER) &&
-            !MetaStoreUtils.isView(tbl)) {
-          if (tbl.getPartitionKeysSize() == 0)  { // Unpartitioned table
-            MetaStoreUtils.updateUnpartitionedTableStatsFast(db, tbl, wh, madeDir);
-          } else { // Partitioned table with no partitions.
-            MetaStoreUtils.updateUnpartitionedTableStatsFast(db, tbl, wh, true);
-          }
-        }
+//        if (!TableType.VIRTUAL_VIEW.toString().equals(tbl.getTableType())) {
+//          if (tbl.getSd().getLocation() == null
+//              || tbl.getSd().getLocation().isEmpty()) {
+//            tblPath = wh.getTablePath(
+//                ms.getDatabase(tbl.getDbName()), tbl.getTableName());
+//          } else {
+//            if (!isExternal(tbl) && !MetaStoreUtils.isNonNativeTable(tbl)) {
+//              LOG.warn("Location: " + tbl.getSd().getLocation()
+//                  + " specified for non-external table:" + tbl.getTableName());
+//            }
+//            tblPath = wh.getDnsPath(new Path(tbl.getSd().getLocation()));
+//          }
+//          tbl.getSd().setLocation(tblPath.toString());
+//        }
+//
+//        if (tblPath != null) {
+//          if (!wh.isDir(tblPath)) {
+//            if (!wh.mkdirs(tblPath, true)) {
+//              throw new MetaException(tblPath
+//                  + " is not a directory or unable to create one");
+//            }
+//            madeDir = true;
+//          }
+//        }
+//        if (HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVESTATSAUTOGATHER) &&
+//            !MetaStoreUtils.isView(tbl)) {
+//          if (tbl.getPartitionKeysSize() == 0)  { // Unpartitioned table
+//            MetaStoreUtils.updateUnpartitionedTableStatsFast(db, tbl, wh, madeDir);
+//          } else { // Partitioned table with no partitions.
+//            MetaStoreUtils.updateUnpartitionedTableStatsFast(db, tbl, wh, true);
+//          }
+//        }
 
         // set create time
         long time = System.currentTimeMillis() / 1000;
@@ -1466,9 +1467,9 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       } finally {
         if (!success) {
           ms.rollbackTransaction();
-          if (madeDir) {
-            wh.deleteDir(tblPath, true);
-          }
+//          if (madeDir) {
+//            wh.deleteDir(tblPath, true);
+//          }
         }
         for (MetaStoreEventListener listener : listeners) {
           CreateTableEvent createTableEvent =
@@ -1563,15 +1564,15 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           }
         }
         isExternal = isExternal(tbl);
-        if (tbl.getSd().getLocation() != null) {
-          tblPath = new Path(tbl.getSd().getLocation());
-          if (!wh.isWritable(tblPath.getParent())) {
-            String target = indexName == null ? "Table" : "Index table";
-            throw new MetaException(target + " metadata not deleted since " +
-                tblPath.getParent() + " is not writable by " +
-                hiveConf.getUser());
-          }
-        }
+//        if (tbl.getSd().getLocation() != null) {
+//          tblPath = new Path(tbl.getSd().getLocation());
+//          if (!wh.isWritable(tblPath.getParent())) {
+//            String target = indexName == null ? "Table" : "Index table";
+//            throw new MetaException(target + " metadata not deleted since " +
+//                tblPath.getParent() + " is not writable by " +
+//                hiveConf.getUser());
+//          }
+//        }
 
         checkTrashPurgeCombination(tblPath, dbname + "." + name, ifPurge, deleteData && !isExternal);
         // Drop the partitions and get a list of locations which need to be deleted
@@ -1662,14 +1663,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
      */
     private void deleteTableData(Path tablePath, boolean ifPurge) {
 
-      if (tablePath != null) {
-        try {
-          wh.deleteDir(tablePath, true, ifPurge);
-        } catch (Exception e) {
-          LOG.error("Failed to delete table directory: " + tablePath +
-              " " + e.getMessage());
-        }
-      }
+//      if (tablePath != null) {
+//        try {
+//          wh.deleteDir(tablePath, true, ifPurge);
+//        } catch (Exception e) {
+//          LOG.error("Failed to delete table directory: " + tablePath +
+//              " " + e.getMessage());
+//        }
+//      }
     }
 
     /**
@@ -1691,16 +1692,16 @@ public class HiveMetaStore extends ThriftHiveMetastore {
     *                removing data from warehouse
     */
     private void deletePartitionData(List<Path> partPaths, boolean ifPurge) {
-      if (partPaths != null && !partPaths.isEmpty()) {
-        for (Path partPath : partPaths) {
-          try {
-            wh.deleteDir(partPath, true, ifPurge);
-          } catch (Exception e) {
-            LOG.error("Failed to delete partition directory: " + partPath +
-                " " + e.getMessage());
-          }
-        }
-      }
+//      if (partPaths != null && !partPaths.isEmpty()) {
+//        for (Path partPath : partPaths) {
+//          try {
+//            wh.deleteDir(partPath, true, ifPurge);
+//          } catch (Exception e) {
+//            LOG.error("Failed to delete partition directory: " + partPath +
+//                " " + e.getMessage());
+//          }
+//        }
+//      }
     }
 
     /**
@@ -1733,7 +1734,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           ConfVars.METASTORE_BATCH_RETRIEVE_MAX);
       Path tableDnsPath = null;
       if (tablePath != null) {
-        tableDnsPath = wh.getDnsPath(tablePath);
+        //tableDnsPath = wh.getDnsPath(tablePath);
       }
       List<Path> partPaths = new ArrayList<Path>();
       Table tbl = ms.getTable(dbName, tableName);
@@ -1750,17 +1751,17 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           if (checkLocation && part.getSd() != null &&
               part.getSd().getLocation() != null) {
 
-            Path partPath = wh.getDnsPath(new Path(part.getSd().getLocation()));
-            if (tableDnsPath == null ||
-                (partPath != null && !isSubdirectory(tableDnsPath, partPath))) {
-              if (!wh.isWritable(partPath.getParent())) {
-                throw new MetaException("Table metadata not deleted since the partition " +
-                    Warehouse.makePartName(partitionKeys, part.getValues()) +
-                    " has parent location " + partPath.getParent() + " which is not writable " +
-                    "by " + hiveConf.getUser());
-              }
-              partPaths.add(partPath);
-            }
+ //           Path partPath = wh.getDnsPath(new Path(part.getSd().getLocation()));
+//            if (tableDnsPath == null ||
+//                (partPath != null && !isSubdirectory(tableDnsPath, partPath))) {
+//              if (!wh.isWritable(partPath.getParent())) {
+//                throw new MetaException("Table metadata not deleted since the partition " +
+//                    Warehouse.makePartName(partitionKeys, part.getValues()) +
+//                    " has parent location " + partPath.getParent() + " which is not writable " +
+//                    "by " + hiveConf.getUser());
+//              }
+//              partPaths.add(partPath);
+//            }
           }
           partNames.add(Warehouse.makePartName(tbl.getPartitionKeys(), part.getValues()));
         }
@@ -2046,23 +2047,23 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           throw new AlreadyExistsException("Partition already exists:" + part);
         }
 
-        if (!wh.isDir(partLocation)) {
-          if (!wh.mkdirs(partLocation, true)) {
-            throw new MetaException(partLocation
-                + " is not a directory or unable to create one");
-          }
-          madeDir = true;
-        }
+//        if (!wh.isDir(partLocation)) {
+//          if (!wh.mkdirs(partLocation, true)) {
+//            throw new MetaException(partLocation
+//                + " is not a directory or unable to create one");
+//          }
+//          madeDir = true;
+//        }
 
         // set create time
         long time = System.currentTimeMillis() / 1000;
         part.setCreateTime((int) time);
         part.putToParameters(hive_metastoreConstants.DDL_TIME, Long.toString(time));
 
-        if (HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVESTATSAUTOGATHER) &&
-            !MetaStoreUtils.isView(tbl)) {
-          MetaStoreUtils.updatePartitionStatsFast(part, wh, madeDir);
-        }
+//        if (HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVESTATSAUTOGATHER) &&
+//            !MetaStoreUtils.isView(tbl)) {
+//          MetaStoreUtils.updatePartitionStatsFast(part, wh, madeDir);
+//        }
 
         success = ms.addPartition(part);
         if (success) {
@@ -2071,9 +2072,9 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       } finally {
         if (!success) {
           ms.rollbackTransaction();
-          if (madeDir) {
-            wh.deleteDir(partLocation, true);
-          }
+//          if (madeDir) {
+//            wh.deleteDir(partLocation, true);
+//          }
         }
 
         for (MetaStoreEventListener listener : listeners) {
@@ -2267,7 +2268,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           ms.rollbackTransaction();
           for (Entry<PartValEqWrapper, Boolean> e : addedPartitions.entrySet()) {
             if (e.getValue()) {
-              wh.deleteDir(new Path(e.getKey().partition.getSd().getLocation()), true);
+              //wh.deleteDir(new Path(e.getKey().partition.getSd().getLocation()), true);
               // we just created this directory - it's not a case of pre-creation, so we nuke
             }
           }
@@ -2407,7 +2408,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           ms.rollbackTransaction();
           for (Entry<PartValEqWrapperLite, Boolean> e : addedPartitions.entrySet()) {
             if (e.getValue()) {
-              wh.deleteDir(new Path(e.getKey().location), true);
+              //wh.deleteDir(new Path(e.getKey().location), true);
               // we just created this directory - it's not a case of pre-creation, so we nuke
             }
           }
@@ -2453,7 +2454,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         if (tbl.getSd().getLocation() == null) {
           throw new MetaException("Cannot specify location for a view partition");
         }
-        partLocation = wh.getDnsPath(new Path(partLocationStr));
+        //partLocation = wh.getDnsPath(new Path(partLocationStr));
       }
 
       boolean result = false;
@@ -2463,13 +2464,13 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         // Check to see if the directory already exists before calling
         // mkdirs() because if the file system is read-only, mkdirs will
         // throw an exception even if the directory already exists.
-        if (!wh.isDir(partLocation)) {
-          if (!wh.mkdirs(partLocation, true)) {
-            throw new MetaException(partLocation
-                + " is not a directory or unable to create one");
-          }
-          result = true;
-        }
+//        if (!wh.isDir(partLocation)) {
+//          if (!wh.mkdirs(partLocation, true)) {
+//            throw new MetaException(partLocation
+//                + " is not a directory or unable to create one");
+//          }
+//          result = true;
+//        }
       }
       return result;
     }
@@ -2483,7 +2484,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         final Table tbl, final PartitionSpecProxy.PartitionIterator part, boolean madeDir) throws MetaException {
       if (HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVESTATSAUTOGATHER) &&
           !MetaStoreUtils.isView(tbl)) {
-        MetaStoreUtils.updatePartitionStatsFast(part, wh, madeDir, false);
+        //MetaStoreUtils.updatePartitionStatsFast(part, wh, madeDir, false);
       }
 
       // set create time
@@ -2535,7 +2536,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           success = ms.addPartition(part);
         } finally {
           if (!success && madeDir) {
-            wh.deleteDir(new Path(part.getSd().getLocation()), true);
+            //wh.deleteDir(new Path(part.getSd().getLocation()), true);
           }
         }
         // we proceed only if we'd actually succeeded anyway, otherwise,
@@ -2663,23 +2664,23 @@ public class HiveMetaStore extends ThriftHiveMetastore {
             partition.getValues());
         }
         Path destParentPath = destPath.getParent();
-        if (!wh.isDir(destParentPath)) {
-          if (!wh.mkdirs(destParentPath, true)) {
-              throw new MetaException("Unable to create path " + destParentPath);
-          }
-        }
+//        if (!wh.isDir(destParentPath)) {
+//          if (!wh.mkdirs(destParentPath, true)) {
+//              throw new MetaException("Unable to create path " + destParentPath);
+//          }
+//        }
         /**
          * TODO: Use the hard link feature of hdfs
          * once https://issues.apache.org/jira/browse/HDFS-3370 is done
          */
-        pathCreated = wh.renameDir(sourcePath, destPath);
+//        pathCreated = wh.renameDir(sourcePath, destPath);
         success = ms.commitTransaction();
       } finally {
         if (!success || !pathCreated) {
           ms.rollbackTransaction();
-          if (pathCreated) {
-            wh.renameDir(destPath, sourcePath);
-          }
+//          if (pathCreated) {
+//            wh.renameDir(destPath, sourcePath);
+//          }
         }
       }
       return new Partition();
@@ -2743,14 +2744,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
             }
             // Archived partitions have har:/to_har_file as their location.
             // The original directory was saved in params
-            if (isArchived) {
-              assert (archiveParentDir != null);
-              wh.deleteDir(archiveParentDir, true, mustPurge);
-            } else {
-              assert (partPath != null);
-              wh.deleteDir(partPath, true, mustPurge);
-              deleteParentRecursive(partPath.getParent(), part_vals.size() - 1, mustPurge);
-            }
+//            if (isArchived) {
+//              assert (archiveParentDir != null);
+//              wh.deleteDir(archiveParentDir, true, mustPurge);
+//            } else {
+//              assert (partPath != null);
+//              wh.deleteDir(partPath, true, mustPurge);
+//              deleteParentRecursive(partPath.getParent(), part_vals.size() - 1, mustPurge);
+//            }
             // ok even if the data is not deleted
           }
         }
@@ -2777,10 +2778,10 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
     }
     private void deleteParentRecursive(Path parent, int depth, boolean mustPurge) throws IOException, MetaException {
-      if (depth > 0 && parent != null && wh.isWritable(parent) && wh.isEmpty(parent)) {
-        wh.deleteDir(parent, true, mustPurge);
-        deleteParentRecursive(parent.getParent(), depth - 1, mustPurge);
-      }
+//      if (depth > 0 && parent != null && wh.isWritable(parent) && wh.isEmpty(parent)) {
+//        wh.deleteDir(parent, true, mustPurge);
+//        deleteParentRecursive(parent.getParent(), depth - 1, mustPurge);
+//      }
     }
 
     @Override
@@ -2919,18 +2920,18 @@ public class HiveMetaStore extends ThriftHiveMetastore {
                     :  "dropPartition() will move partition-directories to trash-directory.");
           // Archived partitions have har:/to_har_file as their location.
           // The original directory was saved in params
-          for (Path path : archToDelete) {
-            wh.deleteDir(path, true, mustPurge);
-          }
-          for (PathAndPartValSize p : dirsToDelete) {
-            wh.deleteDir(p.path, true, mustPurge);
-            try {
-              deleteParentRecursive(p.path.getParent(), p.partValSize - 1, mustPurge);
-            } catch (IOException ex) {
-              LOG.warn("Error from deleteParentRecursive", ex);
-              throw new MetaException("Failed to delete parent: " + ex.getMessage());
-            }
-          }
+//          for (Path path : archToDelete) {
+//            wh.deleteDir(path, true, mustPurge);
+//          }
+//          for (PathAndPartValSize p : dirsToDelete) {
+//            wh.deleteDir(p.path, true, mustPurge);
+//            try {
+//              deleteParentRecursive(p.path.getParent(), p.partValSize - 1, mustPurge);
+//            } catch (IOException ex) {
+//              LOG.warn("Error from deleteParentRecursive", ex);
+//              throw new MetaException("Failed to delete parent: " + ex.getMessage());
+//            }
+//          }
         }
         if (parts != null) {
           for (Partition part : parts) {
@@ -2946,16 +2947,16 @@ public class HiveMetaStore extends ThriftHiveMetastore {
     }
 
     private void verifyIsWritablePath(Path dir) throws MetaException {
-      try {
-        if (!wh.isWritable(dir.getParent())) {
-          throw new MetaException("Table partition not deleted since " + dir.getParent()
-              + " is not writable by " + hiveConf.getUser());
-        }
-      } catch (IOException ex) {
-        LOG.warn("Error from isWritable", ex);
-        throw new MetaException("Table partition not deleted since " + dir.getParent()
-            + " access cannot be checked: " + ex.getMessage());
-      }
+//      try {
+//        if (!wh.isWritable(dir.getParent())) {
+//          throw new MetaException("Table partition not deleted since " + dir.getParent()
+//              + " is not writable by " + hiveConf.getUser());
+//        }
+//      } catch (IOException ex) {
+//        LOG.warn("Error from isWritable", ex);
+//        throw new MetaException("Table partition not deleted since " + dir.getParent()
+//            + " access cannot be checked: " + ex.getMessage());
+//      }
     }
 
     @Override
@@ -3561,8 +3562,8 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       if (newTable.getSd() != null) {
         String newLocation = newTable.getSd().getLocation();
         if (org.apache.commons.lang.StringUtils.isNotEmpty(newLocation)) {
-          Path tblPath = wh.getDnsPath(new Path(newLocation));
-          newTable.getSd().setLocation(tblPath.toString());
+          //Path tblPath = wh.getDnsPath(new Path(newLocation));
+          //newTable.getSd().setLocation(tblPath.toString());
         }
       }
 
@@ -4233,14 +4234,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
             throw new MetaException("Table metadata is corrupted");
           }
 
-          if (tbl.getSd().getLocation() != null) {
-            tblPath = new Path(tbl.getSd().getLocation());
-            if (!wh.isWritable(tblPath.getParent())) {
-              throw new MetaException("Index table metadata not deleted since " +
-                  tblPath.getParent() + " is not writable by " +
-                  hiveConf.getUser());
-            }
-          }
+//          if (tbl.getSd().getLocation() != null) {
+//            tblPath = new Path(tbl.getSd().getLocation());
+//            if (!wh.isWritable(tblPath.getParent())) {
+//              throw new MetaException("Index table metadata not deleted since " +
+//                  tblPath.getParent() + " is not writable by " +
+//                  hiveConf.getUser());
+//            }
+//          }
 
           // Drop the partitions and get a list of partition locations which need to be deleted
           partPaths = dropPartitionsAndGetLocations(ms, qualified[0], qualified[1], tblPath,
